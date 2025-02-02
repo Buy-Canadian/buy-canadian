@@ -14,11 +14,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     OpenFoodAPIConfiguration.userAgent = UserAgent(
-      name: '<Name of your app>',
+      name: 'Buy Canadian',
     );
 
     return MaterialApp(
-      title: 'Food Scanner',
+      title: 'Buy Canadian',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -128,7 +128,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Food Scanner'),
+        title: const Text('Buy Canadian'),
         actions: [
           IconButton(
             icon: ValueListenableBuilder<TorchState>(
@@ -194,19 +194,63 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
     );
   }
 
+Map<String, dynamic> _parseProductInfo(Product product) {
+  final hasOriginsNote = 
+      product.statesTags?.contains('en:origins-to-be-completed') ?? false;
+  final originsNote = hasOriginsNote 
+      ? '\n(Note: Origins information may be incomplete)'
+      : '';
+
+  // Helper function to handle null/empty list conversion
+  List<String> parseList(dynamic value) {
+    if (value is String) {
+      return value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+    return ['Not available'];
+  }
+
+  return {
+    'product_name': (product.productName?.isEmpty ?? true)
+        ? 'Not available'
+        : product.productName!,
+    'brands': (product.brands?.isEmpty ?? true)
+        ? 'Not available'
+        : product.brands!,
+    'origins': '${(product.origins?.isEmpty ?? true) 
+        ? 'Not available' 
+        : product.origins!}$originsNote',
+    'manufacturing_places': (product.manufacturingPlaces?.isEmpty ?? true)
+        ? ['Not available']
+        : parseList(product.manufacturingPlaces!),
+    'countries': (product.countries?.isEmpty ?? true)
+        ? ['Not available']
+        : parseList(product.countries!),
+    'countries_tags': (product.countriesTags?.isEmpty ?? true)
+        ? ['Not available']
+        : product.countriesTags!,
+  };
+}
+
   Widget _buildProductDetails() {
-    final productJson = _product?.toJson() ?? {};
-    final formattedJson = JsonEncoder.withIndent('  ').convert(productJson);
+    final productInfo = _parseProductInfo(_product!);
+
+    if (productInfo['origins'] == "Canada") {
+      // show animation and Canadian flag at top
+    }
 
     return Column(
       children: [
         Expanded(
-          child: SingleChildScrollView(
+          child: ListView(
             padding: const EdgeInsets.all(16.0),
-            child: SelectableText(
-              formattedJson,
-              style: const TextStyle(fontFamily: 'monospace'),
-            ),
+            children: [
+              _buildInfoRow('Product Name', productInfo['product_name']),
+              _buildInfoRow('Brands', productInfo['brands']),
+              _buildInfoRow('Origins', productInfo['origins']),
+              _buildListRow('Manufacturing Places', productInfo['manufacturing_places']),
+              _buildListRow('Countries Sold', productInfo['countries']),
+              _buildListRow('Countries Tags', productInfo['countries_tags']),
+            ],
           ),
         ),
         Padding(
@@ -217,6 +261,67 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildInfoRow(String title, dynamic value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 32,
+              color: Colors.blue,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value.toString(),
+            style: const TextStyle(fontSize: 24),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListRow(String title, List<dynamic> items) {
+    if (items.isEmpty) {
+      items = ["No data available"];
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 32,
+              color: Colors.blue,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: items.map((item) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2.0),
+                child: Text(
+                  item.toString().trim(),
+                  style: const TextStyle(fontSize: 16),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
     );
   }
 }
