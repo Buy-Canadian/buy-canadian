@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
+import 'package:lottie/lottie.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Buy Canadian',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.red,
       ),
       home: const BarcodeScannerScreen(),
     );
@@ -209,6 +210,11 @@ Map<String, dynamic> _parseProductInfo(Product product) {
     return ['Not available'];
   }
 
+  // Check for Canadian origins
+  final rawOrigins = product.origins ?? '';
+  final originsList = rawOrigins.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  final isCanadian = originsList.any((origin) => origin.toUpperCase() == "CANADA");
+
   return {
     'product_name': (product.productName?.isEmpty ?? true)
         ? 'Not available'
@@ -228,6 +234,7 @@ Map<String, dynamic> _parseProductInfo(Product product) {
     'countries_tags': (product.countriesTags?.isEmpty ?? true)
         ? ['Not available']
         : product.countriesTags!,
+    'is_canadian': isCanadian
   };
 }
 
@@ -240,13 +247,21 @@ Map<String, dynamic> _parseProductInfo(Product product) {
 
     return Column(
       children: [
+        if (productInfo['is_canadian'] as bool)
+          Lottie.asset(
+            'assets/canada_flag.json',
+            width: 200,
+            height: 150,
+            fit: BoxFit.contain,
+            repeat: true,
+          ),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
               _buildInfoRow('Product Name', productInfo['product_name']),
               _buildInfoRow('Brands', productInfo['brands']),
-              _buildInfoRow('Origins', productInfo['origins']),
+              _buildOriginRow(productInfo['origins'], productInfo['is_canadian']),
               _buildListRow('Manufacturing Places', productInfo['manufacturing_places']),
               _buildListRow('Countries Sold', productInfo['countries']),
               _buildListRow('Countries Tags', productInfo['countries_tags']),
@@ -324,4 +339,33 @@ Map<String, dynamic> _parseProductInfo(Product product) {
       ),
     );
   }
+
+  Widget _buildOriginRow(String originText, bool isCanadian) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Origins',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 32,
+            color: Colors.blue,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          originText,
+          style: TextStyle(
+            fontSize: 24,
+            color: isCanadian ? Colors.red : Colors.black,
+            fontWeight: isCanadian ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+    ),
+  );
+}
 }
