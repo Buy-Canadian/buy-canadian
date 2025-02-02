@@ -1,16 +1,20 @@
-# buy_canadian
+# Buy Canadian 🇨🇦
 
-A new Flutter project.
+A cross-platform Flutter application that scans barcodes and retrieves detailed product information from the Open Food Facts database. Features real-time scanning, product data visualization, and special handling for Canadian-origin products.
 
-## Getting Started
+## Features ✨
 
-This project is a starting point for a Flutter application.
+- 📸 **Barcode Scanning**  
+  Real-time barcode scanning using MLKit with `mobile_scanner` package
+- 📦 **Product Information**  
+  Displays key product details from Open Food Facts API, including:
+  - Product Name
+  - Country of Origin
+  - Manufacturing Places
+- 🇨🇦 **Easily Recognize Canadian Products**
+  Products originating from Canada will show an animated Canadian flag when scanned
+- 🌐 **Cross-Platform**  
+  Works on Android, iOS, and Web
+- 🔦 **Flashlight Support**  
+  Built-in flashlight toggle for low-light scanning
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
