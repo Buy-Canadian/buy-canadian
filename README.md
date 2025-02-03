@@ -2,6 +2,12 @@
 
 A cross-platform Flutter application that scans barcodes and retrieves detailed product information from the Open Food Facts database. Features real-time scanning, product data visualization, and special handling for Canadian-origin products.
 
+## Download
+
+**Android**: [Download APK](https://github.com/trentsuzuki/buy-canadian/releases/download/20250203-1227/BuyCanadian.apk)
+
+**iOS**: Coming soon!
+
 ## Features ✨
 
 - 📸 **Barcode Scanning**  
