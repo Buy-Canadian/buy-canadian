@@ -205,11 +205,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
   }
 
   Map<String, dynamic> _parseProductInfo(Product product) {
-    final hasOriginsNote =
-        product.statesTags?.contains('en:origins-to-be-completed') ?? false;
-    final originsNote =
-        hasOriginsNote ? '\n(Note: Origins information may be incomplete)' : '';
-
     // Helper function to handle null/empty list conversion
     List<String> parseList(dynamic value) {
       if (value is String) {
@@ -239,7 +234,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
       'brands':
           (product.brands?.isEmpty ?? true) ? 'Not available' : product.brands!,
       'origins':
-          '${(product.origins?.isEmpty ?? true) ? 'Not available' : product.origins!}$originsNote',
+          (product.origins?.isEmpty ?? true) ? 'Not available' : product.origins!,
       'manufacturing_places': (product.manufacturingPlaces?.isEmpty ?? true)
           ? ['Not available']
           : parseList(product.manufacturingPlaces!),
