@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
 import 'package:lottie/lottie.dart';
-import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:validators/validators.dart';
 
 void main() {
@@ -40,13 +39,26 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
     with WidgetsBindingObserver {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final KeyboardVisibilityController _keyboardController =
-      KeyboardVisibilityController();
   MobileScannerController controller = MobileScannerController();
   StreamSubscription<Object?>? _subscription;
   Product? _product;
   bool _isLoading = false;
   String? _errorMessage;
+  String? _selectedCountry;
+
+    // Add these new constants at the top of the file
+  final List<String> _countries = [
+    'Canada',
+    'United States',
+    'Mexico',
+    'France',
+    'Germany',
+    'United Kingdom',
+    'China',
+    'Japan',
+    'Italy',
+    'Other'
+  ];
 
   @override
   void initState() {
@@ -273,82 +285,155 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
         if (!isCanadian)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
-            child: OutlinedButton.icon(
-              icon: const Text("🇨🇦"),
-              label: const Text('This is a Canadian Product'),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.red),
+            child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => _showContributionDialog(barcode),
+                child: const Text(
+                  'Change country of origin',
+                  style: TextStyle(color: Colors.white)),
               ),
-              onPressed: () => _showContributionDialog(barcode, isCanadian),
-            ),
           ),
         if (isCanadian)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: OutlinedButton.icon(
               icon: const Icon(Icons.edit_location_alt_outlined),
-              label: const Text('This is not a Canadian Product!'),
+              label: const Text('Not a Canadian Product?'),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Colors.red),
               ),
-              onPressed: () => _showContributionDialog(barcode, isCanadian),
+              onPressed: () => _showContributionDialog(barcode),
             ),
           ),
       ],
     );
   }
 
-  void _showContributionDialog(String barcode, bool isCanadian) {
-    const String loginAlertTitleText = 'Contribute to Open Food Facts';
-    const String loginPromptText = 'Login to your Open Food Facts account to confirm product origins:';
-    const String confirmationText = 'Confirm change of product origin';
-
+  void _showContributionDialog(String barcode) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(loginAlertTitleText),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                  loginPromptText),
-              TextField(
-                controller: _usernameController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email),
-                ),
-                keyboardType: TextInputType.emailAddress,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Set Product Origin'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  const Text('Select the country of origin:'),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<String>(
+                    value: _selectedCountry,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      labelText: 'Country',
+                    ),
+                    items: _countries
+                      .map((country) => DropdownMenuItem<String>(
+                            value: country,
+                            child: Text(country),
+                          ))
+                      .toList(),
+                    onChanged: (value) => setState(() => _selectedCountry = value),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: _usernameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: Icon(Icons.email),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  TextField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: Icon(Icons.lock),
+                    ),
+                    obscureText: true,
+                  ),
+                ],
               ),
-              TextField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock),
-                ),
-                obscureText: true,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () {
+                  Navigator.pop(context);
+                  _submitOrigin(barcode);
+                },
+                child: const Text(
+                  'Confirm Origin',
+                  style: TextStyle(color: Colors.white)),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Navigator.pop(context);
-              _submitEditOrigin(barcode, isCanadian);
-            },
-            child: const Text(confirmationText,
-                style: TextStyle(color: Colors.white)),
-          ),
-        ],
+          );
+        },
       ),
     );
+  }
+
+  Future<void> _submitOrigin(String barcode) async {
+    if (_selectedCountry == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a country')),
+      );
+      return;
+    }
+    
+    if (!isEmail(_usernameController.text.trim())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return;
+    }
+
+    if (_passwordController.text.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 6 characters')),
+      );
+      return;
+    }
+
+    Map<String, dynamic> productJson = _product!.toJson();
+    productJson['origins'] = (_selectedCountry == 'Other') ? '' : _selectedCountry;
+    final Product updatedProduct = Product.fromJson(productJson);
+
+    try {
+      final Status result = await OpenFoodAPIClient.saveProduct(
+        User(
+          userId: _usernameController.text.trim(),
+          password: _passwordController.text.trim()),
+        updatedProduct,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 2),
+            content: Text(result.status == 1
+                ? 'Thank you for contributing!'
+                : 'Error: ${result.error}')),
+        );
+        if (result.status == 1) {
+          _product = updatedProduct;
+          await _fetchProductInfo(barcode);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Submission failed: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   Widget _buildProductDetails() {
@@ -452,55 +537,5 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
         ],
       ),
     );
-  }
-
-  Future<void> _submitEditOrigin(String barcode, bool isCanadian) async {
-    if (!isEmail(_usernameController.text.trim())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address')),
-      );
-      return;
-    }
-
-    if (_passwordController.text.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password must be at least 6 characters')),
-      );
-      return;
-    }
-
-    Map<String,dynamic> productJson = _product!.toJson();
-    productJson['origins'] = isCanadian ? '' : 'Canada';
-    final Product updatedProduct = Product.fromJson(productJson);
-
-    try {
-      final Status result = await OpenFoodAPIClient.saveProduct(
-        User(
-            userId: _usernameController.text.trim(),
-            password: _passwordController.text.trim()),
-        updatedProduct,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            duration: const Duration(seconds: 2),
-            content: Text(result.status == 1
-                ? '🇨🇦 Thank you for contributing!'
-                : 'Error: ${result.error}')),
-        );
-
-        if (result.status == 1) {
-          _product = updatedProduct;
-          await _fetchProductInfo(barcode);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Submission failed: ${e.toString()}')),
-        );
-      }
-    }
   }
 }
