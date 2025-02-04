@@ -1,0 +1,73 @@
+Privacy Policy for Buy Canadian
+
+Last Updated: 2025-02-04
+
+This Privacy Policy describes how Buy Canadian ("we," "our," or "us") collects, uses, and discloses information through the Buy Canadian mobile application (the "App"). By using the App, you agree to the terms of this Privacy Policy.
+
+1. Information We Collect
+
+a. Camera Access
+    We request camera permissions only to scan product barcodes
+    No images/video are stored or transmitted - camera data is processed locally
+
+b. User Contributions
+    When you submit product origin information, we collect:
+        Selected country data
+        Product barcode
+        Submission timestamp
+
+c. Authentication Data
+    For Open Food Facts contributions, we securely store:
+        Email address
+        Encrypted password (using Flutter Secure Storage)
+
+d. Product Information
+    We retrieve (but do not store) product data from Open Food Facts API including:
+        Product names
+        Manufacturing locations
+        Country information
+        Product origins
+
+2. How We Use Information
+
+Camera Data: Barcode scanning only
+User Contributions: Improve Open Food Facts database
+Authentication Data: Verify contributor identity
+Product Data: Display product information
+
+3. Data Sharing
+
+We do not sell or rent personal information. Data is shared only with:
+    Open Food Facts - Your contributions are submitted to their public database
+    Google Play Services - For app distribution and crash reporting
+
+4. Data Security
+
+We implement:
+    Strong encryption for stored credentials
+    HTTPS for all API communications
+    Automatic session expiration
+
+5. Your Rights
+
+You may:
+    Withdraw camera permissions through device settings
+    Opt-out of data contributions by not submitting information
+
+6. Children's Privacy
+
+The App:
+    Is not directed at children under 13
+    Does not knowingly collect data from children
+    Requires adult supervision for users under 18
+
+7. Changes to This Policy
+
+We will:
+    Notify users of material changes via in-app alerts
+    Archive previous versions at [Your Website URL]
+    Update the "Last Updated" date for all changes
+
+8. Contact Us
+
+For privacy concerns, email: suzukitrent@gmail.com
