@@ -46,7 +46,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
   String? _errorMessage;
   String? _selectedCountry;
 
-    // Add these new constants at the top of the file
   final List<String> _countries = [
     'Canada',
     'United States',
@@ -217,7 +216,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
   }
 
   Map<String, dynamic> _parseProductInfo(Product product) {
-    // Helper function to handle null/empty list conversion
     List<String> parseList(dynamic value) {
       if (value is String) {
         return value
@@ -245,8 +243,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
           : product.productName!,
       'brands':
           (product.brands?.isEmpty ?? true) ? 'Not available' : product.brands!,
-      'origins':
-          (product.origins?.isEmpty ?? true) ? 'Not available' : product.origins!,
+      'origins': (product.origins?.isEmpty ?? true)
+          ? 'Not available'
+          : product.origins!,
       'manufacturing_places': (product.manufacturingPlaces?.isEmpty ?? true)
           ? ['Not available']
           : parseList(product.manufacturingPlaces!),
@@ -286,12 +285,11 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: () => _showContributionDialog(barcode),
-                child: const Text(
-                  'Change country of origin',
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => _showContributionDialog(barcode),
+              child: const Text('Change country of origin',
                   style: TextStyle(color: Colors.white)),
-              ),
+            ),
           ),
         if (isCanadian)
           Padding(
@@ -331,12 +329,13 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
                       labelText: 'Country',
                     ),
                     items: _countries
-                      .map((country) => DropdownMenuItem<String>(
-                            value: country,
-                            child: Text(country),
-                          ))
-                      .toList(),
-                    onChanged: (value) => setState(() => _selectedCountry = value),
+                        .map((country) => DropdownMenuItem<String>(
+                              value: country,
+                              child: Text(country),
+                            ))
+                        .toList(),
+                    onChanged: (value) =>
+                        setState(() => _selectedCountry = value),
                   ),
                   const SizedBox(height: 20),
                   TextField(
@@ -369,9 +368,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
                   Navigator.pop(context);
                   _submitOrigin(barcode);
                 },
-                child: const Text(
-                  'Confirm Origin',
-                  style: TextStyle(color: Colors.white)),
+                child: const Text('Confirm Origin',
+                    style: TextStyle(color: Colors.white)),
               ),
             ],
           );
@@ -387,7 +385,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
       );
       return;
     }
-    
+
     if (!isEmail(_usernameController.text.trim())) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid email address')),
@@ -403,24 +401,25 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
     }
 
     Map<String, dynamic> productJson = _product!.toJson();
-    productJson['origins'] = (_selectedCountry == 'Other') ? '' : _selectedCountry;
+    productJson['origins'] =
+        (_selectedCountry == 'Other') ? '' : _selectedCountry;
     final Product updatedProduct = Product.fromJson(productJson);
 
     try {
       final Status result = await OpenFoodAPIClient.saveProduct(
         User(
-          userId: _usernameController.text.trim(),
-          password: _passwordController.text.trim()),
+            userId: _usernameController.text.trim(),
+            password: _passwordController.text.trim()),
         updatedProduct,
       );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            duration: const Duration(seconds: 2),
-            content: Text(result.status == 1
-                ? 'Thank you for contributing!'
-                : 'Error: ${result.error}')),
+              duration: const Duration(seconds: 2),
+              content: Text(result.status == 1
+                  ? 'Thank you for contributing!'
+                  : 'Error: ${result.error}')),
         );
         if (result.status == 1) {
           _product = updatedProduct;
