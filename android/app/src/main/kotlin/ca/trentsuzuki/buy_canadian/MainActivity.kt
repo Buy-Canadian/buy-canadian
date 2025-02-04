@@ -1,4 +1,4 @@
-package com.example.buy_canadian
+package ca.trentsuzuki.buy_canadian
 
 import io.flutter.embedding.android.FlutterActivity
 
