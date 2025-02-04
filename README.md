@@ -26,3 +26,11 @@ A cross-platform Flutter application that scans barcodes and retrieves detailed 
 - 🔦 **Flashlight Support**  
   Built-in flashlight toggle for low-light scanning
 
+## Screenshots
+
+<p align="center">
+<img src="https://github.com/user-attachments/assets/d8498668-d067-4c54-bc03-6ca9c375a708" width="350">
+&nbsp;
+<img src="https://github.com/user-attachments/assets/3f15021b-f408-496f-bb2f-db53b6e1d823" width="350">
+</p>
+
