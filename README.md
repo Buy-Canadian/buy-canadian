@@ -4,7 +4,7 @@ A cross-platform Flutter application that scans barcodes and retrieves detailed 
 
 ## Download
 
-**Android**: [Download APK](https://github.com/trentsuzuki/buy-canadian/releases/download/20250203-1227/BuyCanadian.apk)
+**Android**: [Download APK](https://github.com/Buy-Canadian/buy-canadian/releases/latest)
 
 **iOS**: Coming soon!
 
