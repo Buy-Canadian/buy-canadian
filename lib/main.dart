@@ -231,7 +231,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
     final productInfo = _product!.toJson();
     return Column(
       children: [
-        if (productInfo['origins'].toString().toUpperCase().contains('CANADA'))
+        if ((productInfo['origins'] ?? '').toString().toUpperCase().contains('CANADA'))
           Lottie.asset(
             'assets/canada_flag.json',
             width: 200,
@@ -251,16 +251,20 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
                         fontSize: 24,
                         fontWeight: FontWeight.bold)),
               ),
+              _buildEditableField('Product Name', 'product_name',
+                  productInfo['product_name'] ?? ''),
               _buildEditableField(
-                  'Product Name', 'product_name', productInfo['product_name']),
-              _buildEditableField('Brands', 'brands', productInfo['brands']),
-              _buildEditableField('Origins', 'origins', productInfo['origins']),
-              _buildEditableField('Manufacturing Places',
-                  'manufacturing_places', productInfo['manufacturing_places']),
+                  'Brands', 'brands', productInfo['brands'] ?? ''),
               _buildEditableField(
-                  'Countries Sold', 'countries', productInfo['countries']),
+                  'Origins', 'origins', productInfo['origins'] ?? ''),
+              _buildEditableField(
+                  'Manufacturing Places',
+                  'manufacturing_places',
+                  productInfo['manufacturing_places'] ?? ''),
+              _buildEditableField('Countries Sold', 'countries',
+                  productInfo['countries'] ?? ''),
               _buildEditableListField('Countries Tags', 'countries_tags',
-                  productInfo['countries_tags']),
+                  productInfo['countries_tags'] ?? []),
               _buildSubmissionFooter()
             ],
           ),
@@ -399,6 +403,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
     }
 
     setState(() => _isSubmitting = true);
+    print(_productDraft!.toJson());
 
     try {
       final Status result = await OpenFoodAPIClient.saveProduct(
