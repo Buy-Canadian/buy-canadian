@@ -122,7 +122,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
                   productName: '',
                   brands: '',
                   countries: 'Canada',
-                  countriesTags: [],
                   lang: OpenFoodFactsLanguage.ENGLISH)
               .toJson();
           newProductJson['origins'] ??= '';
@@ -263,8 +262,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
                   productInfo['manufacturing_places'] ?? ''),
               _buildEditableField('Countries Sold', 'countries',
                   productInfo['countries'] ?? ''),
-              _buildEditableListField('Countries Tags', 'countries_tags',
-                  productInfo['countries_tags'] ?? []),
               _buildSubmissionFooter()
             ],
           ),
