@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
 import 'package:lottie/lottie.dart';
-import 'package:validators/validators.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,27 +37,17 @@ class BarcodeScannerScreen extends StatefulWidget {
 
 class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
     with WidgetsBindingObserver {
+  final _secureStorage = const FlutterSecureStorage();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   MobileScannerController controller = MobileScannerController();
   StreamSubscription<Object?>? _subscription;
   Product? _product;
+  Product? _productDraft;
+  bool _isNewProduct = false;
   bool _isLoading = false;
+  bool _isSubmitting = false;
   String? _errorMessage;
-  String? _selectedCountry;
-
-  final List<String> _countries = [
-    'Canada',
-    'United States',
-    'Mexico',
-    'France',
-    'Germany',
-    'United Kingdom',
-    'China',
-    'Japan',
-    'Italy',
-    'Other'
-  ];
 
   @override
   void initState() {
@@ -105,6 +95,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _product = null;
+      _isNewProduct = false;
+      _isSubmitting = false;
     });
 
     _fetchProductInfo(barcode);
@@ -122,8 +115,26 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
       );
 
       if (mounted) {
+        if (result.product == null) {
+          // Product does not exist, create new product draft
+          Map<String, dynamic> newProductJson = Product(
+                  barcode: barcode,
+                  productName: '',
+                  brands: '',
+                  countries: 'Canada',
+                  countriesTags: [],
+                  lang: OpenFoodFactsLanguage.ENGLISH)
+              .toJson();
+          newProductJson['origins'] ??= '';
+          newProductJson['manufacturing_places'] ??= '';
+
+          _productDraft = Product.fromJson(newProductJson);
+          _isNewProduct = true;
+        } else {
+          _productDraft = Product.fromJson(result.product!.toJson());
+        }
         setState(() {
-          _product = result.product;
+          _product = _productDraft;
           _isLoading = false;
         });
       }
@@ -149,7 +160,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Buy Canadian'),
+        title: const Text('Buy Canadian 🇨🇦',
+            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: ValueListenableBuilder<TorchState>(
@@ -215,232 +227,11 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
     );
   }
 
-  Map<String, dynamic> _parseProductInfo(Product product) {
-    List<String> parseList(dynamic value) {
-      if (value is String) {
-        return value
-            .split(',')
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
-            .toList();
-      }
-      return ['Not available'];
-    }
-
-    // Check for Canadian origins
-    final rawOrigins = product.origins ?? '';
-    final originsList = rawOrigins
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-    final isCanadian =
-        originsList.any((origin) => origin.toUpperCase() == "CANADA");
-
-    return {
-      'product_name': (product.productName?.isEmpty ?? true)
-          ? 'Not available'
-          : product.productName!,
-      'brands':
-          (product.brands?.isEmpty ?? true) ? 'Not available' : product.brands!,
-      'origins': (product.origins?.isEmpty ?? true)
-          ? 'Not available'
-          : product.origins!,
-      'manufacturing_places': (product.manufacturingPlaces?.isEmpty ?? true)
-          ? ['Not available']
-          : parseList(product.manufacturingPlaces!),
-      'countries': (product.countries?.isEmpty ?? true)
-          ? ['Not available']
-          : parseList(product.countries!),
-      'countries_tags': (product.countriesTags?.isEmpty ?? true)
-          ? ['Not available']
-          : product.countriesTags!,
-      'is_canadian': isCanadian
-    };
-  }
-
-  Widget _buildOriginRow(String originText, bool isCanadian, String barcode) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Origins',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 32,
-            color: Colors.blue,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          originText,
-          style: TextStyle(
-            fontSize: 24,
-            color: isCanadian ? Colors.red : Colors.black,
-            fontWeight: isCanadian ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-        const SizedBox(height: 12),
-        if (!isCanadian)
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () => _showContributionDialog(barcode),
-              child: const Text('Change country of origin',
-                  style: TextStyle(color: Colors.white)),
-            ),
-          ),
-        if (isCanadian)
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.edit_location_alt_outlined),
-              label: const Text('Not a Canadian Product?'),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.red),
-              ),
-              onPressed: () => _showContributionDialog(barcode),
-            ),
-          ),
-      ],
-    );
-  }
-
-  void _showContributionDialog(String barcode) {
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Text('Set Product Origin'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  const Text('Select the country of origin:'),
-                  const SizedBox(height: 20),
-                  DropdownButtonFormField<String>(
-                    value: _selectedCountry,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      labelText: 'Country',
-                    ),
-                    items: _countries
-                        .map((country) => DropdownMenuItem<String>(
-                              value: country,
-                              child: Text(country),
-                            ))
-                        .toList(),
-                    onChanged: (value) =>
-                        setState(() => _selectedCountry = value),
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  TextField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock),
-                    ),
-                    obscureText: true,
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: () {
-                  Navigator.pop(context);
-                  _submitOrigin(barcode);
-                },
-                child: const Text('Confirm Origin',
-                    style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Future<void> _submitOrigin(String barcode) async {
-    if (_selectedCountry == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a country')),
-      );
-      return;
-    }
-
-    if (!isEmail(_usernameController.text.trim())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address')),
-      );
-      return;
-    }
-
-    if (_passwordController.text.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password must be at least 6 characters')),
-      );
-      return;
-    }
-
-    Map<String, dynamic> productJson = _product!.toJson();
-    productJson['origins'] =
-        (_selectedCountry == 'Other') ? '' : _selectedCountry;
-    final Product updatedProduct = Product.fromJson(productJson);
-
-    try {
-      final Status result = await OpenFoodAPIClient.saveProduct(
-        User(
-            userId: _usernameController.text.trim(),
-            password: _passwordController.text.trim()),
-        updatedProduct,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              duration: const Duration(seconds: 2),
-              content: Text(result.status == 1
-                  ? 'Thank you for contributing!'
-                  : 'Error: ${result.error}')),
-        );
-        if (result.status == 1) {
-          _product = updatedProduct;
-          await _fetchProductInfo(barcode);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Submission failed: ${e.toString()}')),
-        );
-      }
-    }
-  }
-
   Widget _buildProductDetails() {
-    final productInfo = _parseProductInfo(_product!);
-
+    final productInfo = _product!.toJson();
     return Column(
       children: [
-        if (productInfo['is_canadian'] as bool)
+        if (productInfo['origins'].toString().toUpperCase().contains('CANADA'))
           Lottie.asset(
             'assets/canada_flag.json',
             width: 200,
@@ -452,22 +243,30 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
           child: ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
-              _buildInfoRow('Product Name', productInfo['product_name']),
-              _buildInfoRow('Brands', productInfo['brands']),
-              _buildOriginRow(
-                productInfo['origins'],
-                productInfo['is_canadian'],
-                _product!.barcode ?? '',
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
+                child: Text('Product Details:',
+                    style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold)),
               ),
-              _buildListRow(
-                  'Manufacturing Places', productInfo['manufacturing_places']),
-              _buildListRow('Countries Sold', productInfo['countries']),
-              _buildListRow('Countries Tags', productInfo['countries_tags']),
+              _buildEditableField(
+                  'Product Name', 'product_name', productInfo['product_name']),
+              _buildEditableField('Brands', 'brands', productInfo['brands']),
+              _buildEditableField('Origins', 'origins', productInfo['origins']),
+              _buildEditableField('Manufacturing Places',
+                  'manufacturing_places', productInfo['manufacturing_places']),
+              _buildEditableField(
+                  'Countries Sold', 'countries', productInfo['countries']),
+              _buildEditableListField('Countries Tags', 'countries_tags',
+                  productInfo['countries_tags']),
+              _buildSubmissionFooter()
             ],
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.only(bottom: 16.0),
           child: ElevatedButton(
             onPressed: _resetScanner,
             child: const Text('Scan Again'),
@@ -477,24 +276,41 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
     );
   }
 
-  Widget _buildInfoRow(String title, dynamic value) {
+  Widget _buildSubmissionFooter() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          ElevatedButton.icon(
+            icon: _isSubmitting
+                ? const CircularProgressIndicator()
+                : const Icon(Icons.cloud_upload),
+            label: Text(_isNewProduct ? 'Create New Product' : 'Save Changes'),
+            onPressed: _isSubmitting ? null : _submitProduct,
+          ),
+          TextButton(
+            onPressed: _resetScanner,
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditableField(String label, String fieldKey, String value,
+      {bool isRequired = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 32,
-              color: Colors.blue,
+          TextFormField(
+            initialValue: value,
+            decoration: InputDecoration(
+              labelText: '$label${isRequired ? ' *' : ''}',
+              border: const OutlineInputBorder(),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value.toString(),
-            style: const TextStyle(fontSize: 24),
+            onChanged: (value) => _updateDraft(fieldKey, value),
           ),
           const SizedBox(height: 12),
         ],
@@ -502,39 +318,140 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
     );
   }
 
-  Widget _buildListRow(String title, List<dynamic> items) {
-    if (items.isEmpty) {
-      items = ["No data available"];
-    }
+  Widget _buildEditableListField(
+      String label, String fieldKey, List<String> items) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 32,
-              color: Colors.blue,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: items.map((item) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.0),
-                child: Text(
-                  item.toString().trim(),
-                  style: const TextStyle(fontSize: 16),
-                ),
-              );
-            }).toList(),
-          ),
+          TextFormField(
+              initialValue: items.where((e) => e.isNotEmpty).join(', '),
+              decoration: InputDecoration(
+                labelText: label,
+                border: const OutlineInputBorder(),
+                helperText: 'Separate values with commas',
+              ),
+              onChanged: (value) => _updateDraft(
+                  fieldKey,
+                  value
+                      .split(',')
+                      .map((e) => e.trim())
+                      .where((e) => e.isNotEmpty)
+                      .toList())),
           const SizedBox(height: 12),
         ],
       ),
     );
+  }
+
+  void _showLoginDialog(VoidCallback? retryAction) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Login to your Open Food Facts account'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _usernameController,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            TextField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Password'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _secureStorage.write(
+                key: 'off_email',
+                value: _usernameController.text.trim(),
+              );
+              await _secureStorage.write(
+                key: 'off_password',
+                value: _passwordController.text.trim(),
+              );
+              if (retryAction != null) retryAction();
+            },
+            child: const Text('Login'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submitProduct() async {
+    final email = await _secureStorage.read(key: 'off_email');
+    final password = await _secureStorage.read(key: 'off_password');
+
+    if (email == null || password == null) {
+      _showLoginDialog(_submitProduct);
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final Status result = await OpenFoodAPIClient.saveProduct(
+        User(userId: email, password: password),
+        _productDraft!,
+      );
+
+      if (result.status == 1) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(_isNewProduct
+                    ? 'Product created successfully!'
+                    : 'Product updated successfully!')),
+          );
+        }
+        await _fetchProductInfo(_productDraft!.barcode!);
+      }
+    } catch (e) {
+      await _secureStorage.write(
+        key: 'off_email',
+        value: null,
+      );
+      await _secureStorage.write(
+        key: 'off_password',
+        value: null,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(_isNewProduct
+                  ? 'Could not create new product'
+                  : 'Could not update product info')),
+        );
+      }
+    } finally {
+      setState(() => _isSubmitting = false);
+    }
+  }
+
+  void _updateDraft(String fieldKey, dynamic value) {
+    setState(() {
+      _productDraft = _productDraft!.copyWith(
+        toJson: {fieldKey: value},
+      );
+    });
+  }
+}
+
+extension ProductCopyWith on Product {
+  Product copyWith({Map<String, dynamic>? toJson}) {
+    final json = this.toJson();
+    json.addAll(toJson ?? {});
+    return Product.fromJson(json);
   }
 }
