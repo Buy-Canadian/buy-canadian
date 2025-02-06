@@ -296,7 +296,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
             children: [
               Padding(
                 padding: const EdgeInsets.only(top: 16.0, bottom: 16.0),
-                child: Text('Product Details:',
+                child: Text(_isNewProduct ? 'Add New Product to Database' : 'Product Details:',
                     style: const TextStyle(
                         color: Colors.red,
                         fontSize: 24,
