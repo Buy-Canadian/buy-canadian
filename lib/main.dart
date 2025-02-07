@@ -5,6 +5,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'utils/cors_proxy_uri_product_helper.dart';
 
 void main() {
   runApp(const MyApp());
@@ -100,6 +101,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
   bool _isLoading = false;
   bool _isSubmitting = false;
   String? _errorMessage;
+  
+  final _uriHelper = CorsProxyUriProductHelper(domain: 'openfoodfacts.org');
 
   @override
   void initState() {
@@ -164,6 +167,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
           fields: ProductField.values,
           language: OpenFoodFactsLanguage.ENGLISH,
         ),
+        uriHelper: _uriHelper
       );
 
       if (mounted) {
@@ -458,6 +462,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen>
       final Status result = await OpenFoodAPIClient.saveProduct(
         User(userId: email, password: password),
         _productDraft!,
+        uriHelper: _uriHelper
       );
 
       if (result.status == 1) {
