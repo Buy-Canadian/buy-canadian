@@ -32,17 +32,18 @@ class MyApp extends StatelessWidget {
 /// The new HomePage widget with a button to start scanning.
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
-  final String markdownText = """
-🇨🇦 Announcing the Buy Canadian App! Fight Back Against US Tariffs 🇨🇦 
+  final String markdownText ="""
+# 🇨🇦 Buy Canadian 🇨🇦
 
-The trade war with the US is a wake-up call for us to double down on supporting Canadian-made products.
-
-That’s why we built the Buy Canadian app, a *Free and Open-Source* app that **scans food product barcodes** to instantly reveal where they originate from.
+**Scan food product barcodes** to reveal where they originate from.
 
 # Why this matters:
 
-Every dollar spent on Canadian goods is a vote against these harmful tariffs. When we support local manufacturers, we strengthen our economy against external pressures.
+The trade war with the US is a wake-up call for us to double down on supporting Canadian-made products.
+Every dollar spent on Canadian goods is a vote against these harmful tariffs.
+When we support local manufacturers, we strengthen our economy against external pressures.
 
+This app is made in the spirit of *Free and Open-Source Software* (FOSS)
 """;
 
   @override
@@ -58,7 +59,7 @@ Every dollar spent on Canadian goods is a vote against these harmful tariffs. Wh
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Display the markdown text
-              MarkdownBody(data: markdownText),
+              MarkdownBody(data: markdownText, shrinkWrap: false),
               const SizedBox(height: 20),
               // Button to navigate to the barcode scanner screen
               ElevatedButton(
